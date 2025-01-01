@@ -8,6 +8,7 @@ import os
 import re
 import csv
 from tqdm import tqdm
+import random  # Added
 
 work_name = "rice" # rice or multi
 
@@ -96,37 +97,162 @@ def write2txt(file_name, content, type):
 
 
 # Added
-# Build kg_final.txt, which excludes all phenotypes in the knowledge graph
-def build_kg_final(path, file_entity2id, file_relation2id, file_triple, file_out):
-    entity2id, relation2id = {}, {}
-    with open(os.path.join(path, file_entity2id), 'r', encoding='utf-8') as file:
-        for line in file:
-            entity, id = line.strip().split('\t')
-            entity2id[entity] = id
-    with open(os.path.join(path, file_relation2id), 'r', encoding='utf-8') as file:
-        for line in file:
-            relation, id = line.strip().split('\t')
-            relation2id[relation] = id
-    with open(os.path.join(path, file_out), 'w', encoding='utf-8') as file_out:
-        with open(os.path.join(path, file_triple), 'r', encoding='utf-8') as file:
-            for line in file:
+def build_kg_final(path, file_entity2id='entity2id.txt', file_relation2id="relation2id.txt", 
+                   file_triple="triple.txt", file_out="kg_final.txt"):
+    """
+    Build 'kg_final.txt' by reading and transforming entity/relation IDs 
+    and filtering out any triple whose relation is 'phenotype'.
+    """
+    
+    # Initialize dictionaries to map entities and relations to their respective IDs
+    entity2id = {}
+    relation2id = {}
+
+    # Read the entity-to-ID mappings
+    with open(os.path.join(path, file_entity2id), 'r', encoding='utf-8') as f_ent:
+        for line in f_ent:
+            entity, eid = line.strip().split('\t')
+            entity2id[entity] = eid
+
+    # Read the relation-to-ID mappings
+    with open(os.path.join(path, file_relation2id), 'r', encoding='utf-8') as f_rel:
+        for line in f_rel:
+            relation, rid = line.strip().split('\t')
+            relation2id[relation] = rid
+
+    # Open the output file to write filtered triples
+    with open(os.path.join(path, file_out), 'w', encoding='utf-8') as f_out:
+        # Open the original triples file
+        with open(os.path.join(path, file_triple), 'r', encoding='utf-8') as f_tri:
+            for line in f_tri:
                 head, relation, tail = line.strip().split('\t')
+                
+                # Assert that all parts of the triple exist in the dictionaries
                 assert head in entity2id and tail in entity2id and relation in relation2id
+                
+                # Exclude triples that use the 'phenotype' relation
                 if relation != "phenotype":
-                    file_out.write(f"{entity2id[head]} {relation2id[relation]} {entity2id[tail]}\n")
+                    # Write the valid triple in ID form to the output
+                    f_out.write(f"{entity2id[head]} {relation2id[relation]} {entity2id[tail]}\n")
+
+
+
+def create_train_test(
+    folder_path, entity2id_file='entity2id.txt', triple_file="triple.txt", 
+    train_file="train.txt", test_file='test.txt', pheno2id_file='pheno2id.txt', 
+    test_ratio = 0.1, seed = 42
+):
+    """
+    Create train.txt and test.txt with the format:
+       pheno_id gene1_id gene2_id ...
+    Also create pheno2id.txt with IDs ranging from 0..(num_phenos-1).
+    :param test_ratio: Fraction of genes to put in test set (default = 0.1)
+    :param seed: Random seed for reproducibility
+    """
+    random.seed(seed)
+    entity2id_path = os.path.join(folder_path, entity2id_file)
+    triple_path = os.path.join(folder_path, triple_file)
+    train_path = os.path.join(folder_path, train_file)
+    test_path = os.path.join(folder_path, test_file)
+    pheno2id_path = os.path.join(folder_path, pheno2id_file)
+    
+    # 1) Read entity2id.txt into a dictionary
+    entity2id = {}
+    with open(entity2id_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            entity_name, entity_id_str = line.split('\t')
+            entity_id = int(entity_id_str)
+            entity2id[entity_name] = entity_id
+    
+    # 2) Read triple.txt, filtering for (gene, "phenotype", pheno)
+    #    We'll store them in a dict: pheno -> set of genes
+    pheno2genes = {}
+    with open(triple_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            # triple.txt format: "entity1_name relation_name entity2_name"
+            e1_name, relation_name, e2_name = line.split('\t')
+            if relation_name != "phenotype":
+                continue
+
+            # Skip if either entity is not in entity2id
+            if e1_name not in entity2id or e2_name not in entity2id:
+                continue
+            
+            # Collect them in a dictionary: pheno -> set of genes
+            if e2_name not in pheno2genes:
+                pheno2genes[e2_name] = set()
+            pheno2genes[e2_name].add(e1_name)
+    
+    # Gather all unique genes
+    all_genes = set()
+    for pheno, genes in pheno2genes.items():
+        all_genes.update(genes)
+    
+    # 3) Split genes into train/test sets (90/10 default)
+    all_genes = list(all_genes)
+    random.shuffle(all_genes)
+    split_index = int(len(all_genes) * test_ratio)
+    test_genes = set(all_genes[:split_index])
+    train_genes = set(all_genes[split_index:])
+    
+    # 4) Create a pheno2id mapping (0 to num_phenos-1)
+    #    We'll just sort phenos by name to have a consistent ordering
+    all_phenos = sorted(pheno2genes.keys())
+    pheno2id = {pheno_name: idx for idx, pheno_name in enumerate(all_phenos)}
+    
+    # 5) Write pheno2id.txt
+    with open(pheno2id_path, 'w', encoding='utf-8') as f:
+        for pheno_name in all_phenos:
+            f.write(f"{pheno_name} {pheno2id[pheno_name]}\n")
+    
+    # 6) Generate train.txt and test.txt
+    #    Format for each line: "pheno_id gene1_id gene2_id ..."
+    with open(train_path, 'w', encoding='utf-8') as f_train, \
+         open(test_path, 'w', encoding='utf-8') as f_test:
+        
+        for pheno_name in all_phenos:
+            # pheno ID
+            pid = pheno2id[pheno_name]
+            
+            # All genes associated with this phenotype
+            genes_for_pheno = pheno2genes[pheno_name]
+            
+            # Separate out genes into train split vs test split
+            train_genes_for_pheno = genes_for_pheno.intersection(train_genes)
+            test_genes_for_pheno = genes_for_pheno.intersection(test_genes)
+            
+            # Write train line if there is at least one gene
+            if train_genes_for_pheno:
+                # Convert gene names to IDs
+                train_gene_ids = [entity2id[g] for g in sorted(train_genes_for_pheno)]
+                line_str = str(pid) + " " + " ".join(map(str, train_gene_ids))
+                f_train.write(line_str + "\n")
+            
+            # Write test line if there is at least one gene
+            if test_genes_for_pheno:
+                test_gene_ids = [entity2id[g] for g in sorted(test_genes_for_pheno)]
+                line_str = str(pid) + " " + " ".join(map(str, test_gene_ids))
+                f_test.write(line_str + "\n")
 
 
 def main():
-    files_name = ["entity2id.txt", "relation2id.txt", "triple.txt"]
     # multi_data()
+    # files_name = ["entity2id.txt", "relation2id.txt", "triple.txt"]
     # print(len(entity_set))
     # print(len(relation_set))
     # print(len(triple_set))
     # write2txt(os.path.join(target_path, files_name[0]), entity_set, "set")
     # write2txt(os.path.join(target_path, files_name[1]), relation_set, "set")
     # write2txt(os.path.join(target_path, files_name[2]), triple_set, "list")
-    # Added
-    build_kg_final(target_path, files_name[0], files_name[1], files_name[2], "kg_final.txt")
+    # # Added
+    # build_kg_final(target_path, file_out="kg_final.txt")
+    create_train_test(target_path, test_ratio=0.1, seed=42)
 
 if __name__ == "__main__":
     main()
