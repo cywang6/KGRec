@@ -233,3 +233,6 @@ pyrightconfig.json
 tuner.py
 logs/
 *.log
+
+# data/rice/ folder
+data/rice/
