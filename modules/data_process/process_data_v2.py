@@ -95,16 +95,38 @@ def write2txt(file_name, content, type):
                 file.write(f"{item[0]}\t{item[1]}\t{item[2]}\n")   
 
 
-def main():
-    multi_data()
-    files_name = ["entity2id.txt", "relation2id.txt", "triple.txt"]
-    print(len(entity_set))
-    print(len(relation_set))
-    print(len(triple_set))
-    write2txt(os.path.join(target_path, files_name[0]), entity_set, "set")
-    write2txt(os.path.join(target_path, files_name[1]), relation_set, "set")
-    write2txt(os.path.join(target_path, files_name[2]), triple_set, "list")
+# Added
+# Build kg_final.txt, which excludes all phenotypes in the knowledge graph
+def build_kg_final(path, file_entity2id, file_relation2id, file_triple, file_out):
+    entity2id, relation2id = {}, {}
+    with open(os.path.join(path, file_entity2id), 'r', encoding='utf-8') as file:
+        for line in file:
+            entity, id = line.strip().split('\t')
+            entity2id[entity] = id
+    with open(os.path.join(path, file_relation2id), 'r', encoding='utf-8') as file:
+        for line in file:
+            relation, id = line.strip().split('\t')
+            relation2id[relation] = id
+    with open(os.path.join(path, file_out), 'w', encoding='utf-8') as file_out:
+        with open(os.path.join(path, file_triple), 'r', encoding='utf-8') as file:
+            for line in file:
+                head, relation, tail = line.strip().split('\t')
+                assert head in entity2id and tail in entity2id and relation in relation2id
+                if relation != "phenotype":
+                    file_out.write(f"{entity2id[head]} {relation2id[relation]} {entity2id[tail]}\n")
 
+
+def main():
+    files_name = ["entity2id.txt", "relation2id.txt", "triple.txt"]
+    # multi_data()
+    # print(len(entity_set))
+    # print(len(relation_set))
+    # print(len(triple_set))
+    # write2txt(os.path.join(target_path, files_name[0]), entity_set, "set")
+    # write2txt(os.path.join(target_path, files_name[1]), relation_set, "set")
+    # write2txt(os.path.join(target_path, files_name[2]), triple_set, "list")
+    # Added
+    build_kg_final(target_path, files_name[0], files_name[1], files_name[2], "kg_final.txt")
 
 if __name__ == "__main__":
     main()
