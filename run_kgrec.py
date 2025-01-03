@@ -133,7 +133,8 @@ if __name__ == '__main__':
 
             train_e_t = time()
 
-            if epoch % test_interval == 0 and epoch >= 1:
+            # if epoch % test_interval == 0 and epoch >= 1:
+            if epoch % test_interval == 0:
                 """testing"""
                 test_s_t = time()
                 model.eval()
