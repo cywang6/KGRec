@@ -49,6 +49,10 @@ def parse_args_kgsr():
     parser.add_argument("--save", action='store_true', default=False, help="save model or not")
     parser.add_argument("--out_dir", type=str, default="./weights/", help="output directory for model")
 
+    # ===== Self added ===== #
+    parser.add_argument('--train_file', type=str, default='train.txt', help='train file')
+    parser.add_argument('--test_file', type=str, default='test.txt', help='test file')
+
     return parser.parse_args()
 
 def parse_args_kgcl():

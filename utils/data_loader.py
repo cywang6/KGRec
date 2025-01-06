@@ -141,8 +141,10 @@ def load_data(model_args):
     directory = args.data_path + args.dataset + '/'
 
     print('reading train and test user-item set ...')
-    train_cf = read_cf(directory + 'train.txt')
-    test_cf = read_cf(directory + 'test.txt')
+    # train_cf = read_cf(directory + 'train.txt')
+    # test_cf = read_cf(directory + 'test.txt')
+    train_cf = read_cf(directory + args.train_file)
+    test_cf = read_cf(directory + args.test_file)
     print('interaction count: train %d, test %d' % (train_cf.shape[0], test_cf.shape[0]))
     remap_item(train_cf, test_cf)
 
