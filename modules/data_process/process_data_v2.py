@@ -9,6 +9,7 @@ import re
 import csv
 from tqdm import tqdm
 import random  # Added
+import numpy as np  # Used for np.array_split below
 
 work_name = "rice" # rice or multi
 
@@ -136,27 +137,27 @@ def build_kg_final(path, file_entity2id='entity2id.txt', file_relation2id="relat
                     f_out.write(f"{entity2id[head]} {relation2id[relation]} {entity2id[tail]}\n")
 
 
-
-def create_train_test(
-    folder_path, entity2id_file='entity2id.txt', triple_file="triple.txt", 
-    train_file="train.txt", test_file='test.txt', pheno2id_file='pheno2id.txt', 
-    test_ratio = 0.1, seed = 42
+def create_kfold(
+    folder_path,
+    entity2id_file='entity2id.txt',
+    triple_file="triple.txt",
+    pheno2id_file='pheno2id.txt',
+    k=10,
+    seed=42
 ):
     """
-    Create train.txt and test.txt with the format:
-       pheno_id gene1_id gene2_id ...
-    Also create pheno2id.txt with IDs ranging from 0..(num_phenos-1).
-    :param test_ratio: Fraction of genes to put in test set (default = 0.1)
+    Create k-fold cross validation splits.
+    For each fold i, produce train_i.txt and test_i.txt.
+
+    train_i.txt and test_i.txt have the format:
+        pheno_id gene1_id gene2_id ...
+    We also create a single pheno2id.txt with IDs for phenotypes.
+    :param k: Number of folds (default = 10)
     :param seed: Random seed for reproducibility
     """
-    random.seed(seed)
-    entity2id_path = os.path.join(folder_path, entity2id_file)
-    triple_path = os.path.join(folder_path, triple_file)
-    train_path = os.path.join(folder_path, train_file)
-    test_path = os.path.join(folder_path, test_file)
-    pheno2id_path = os.path.join(folder_path, pheno2id_file)
-    
+
     # 1) Read entity2id.txt into a dictionary
+    entity2id_path = os.path.join(folder_path, entity2id_file)
     entity2id = {}
     with open(entity2id_path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -166,9 +167,10 @@ def create_train_test(
             entity_name, entity_id_str = line.split('\t')
             entity_id = int(entity_id_str)
             entity2id[entity_name] = entity_id
-    
+
     # 2) Read triple.txt, filtering for (gene, "phenotype", pheno)
     #    We'll store them in a dict: pheno -> set of genes
+    triple_path = os.path.join(folder_path, triple_file)
     pheno2genes = {}
     with open(triple_path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -183,76 +185,88 @@ def create_train_test(
             # Skip if either entity is not in entity2id
             if e1_name not in entity2id or e2_name not in entity2id:
                 continue
-            
-            # Collect them in a dictionary: pheno -> set of genes
+
             if e2_name not in pheno2genes:
                 pheno2genes[e2_name] = set()
             pheno2genes[e2_name].add(e1_name)
-    
-    # Gather all unique genes
+
+    # 3) Gather all unique genes
     all_genes = set()
     for pheno, genes in pheno2genes.items():
         all_genes.update(genes)
-    
-    # 3) Split genes into train/test sets (90/10 default)
     all_genes = list(all_genes)
+
+    # 4) Shuffle once for reproducibility
+    random.seed(seed)
     random.shuffle(all_genes)
-    split_index = int(len(all_genes) * test_ratio)
-    test_genes = set(all_genes[:split_index])
-    train_genes = set(all_genes[split_index:])
-    
-    # 4) Create a pheno2id mapping (0 to num_phenos-1)
+
+    # 5) Create a pheno2id mapping (0 to num_phenos-1)
     #    We'll just sort phenos by name to have a consistent ordering
     all_phenos = sorted(pheno2genes.keys())
     pheno2id = {pheno_name: idx for idx, pheno_name in enumerate(all_phenos)}
-    
-    # 5) Write pheno2id.txt
+
+    # 6) Write a single pheno2id.txt
+    pheno2id_path = os.path.join(folder_path, pheno2id_file)
     with open(pheno2id_path, 'w', encoding='utf-8') as f:
         for pheno_name in all_phenos:
             f.write(f"{pheno_name} {pheno2id[pheno_name]}\n")
-    
-    # 6) Generate train.txt and test.txt
-    #    Format for each line: "pheno_id gene1_id gene2_id ..."
-    with open(train_path, 'w', encoding='utf-8') as f_train, \
-         open(test_path, 'w', encoding='utf-8') as f_test:
-        
-        for pheno_name in all_phenos:
-            # pheno ID
-            pid = pheno2id[pheno_name]
-            
-            # All genes associated with this phenotype
-            genes_for_pheno = pheno2genes[pheno_name]
-            
-            # Separate out genes into train split vs test split
-            train_genes_for_pheno = genes_for_pheno.intersection(train_genes)
-            test_genes_for_pheno = genes_for_pheno.intersection(test_genes)
-            
-            # Write train line if there is at least one gene
-            if train_genes_for_pheno:
-                # Convert gene names to IDs
-                train_gene_ids = [entity2id[g] for g in sorted(train_genes_for_pheno)]
-                line_str = str(pid) + " " + " ".join(map(str, train_gene_ids))
-                f_train.write(line_str + "\n")
-            
-            # Write test line if there is at least one gene
-            if test_genes_for_pheno:
-                test_gene_ids = [entity2id[g] for g in sorted(test_genes_for_pheno)]
-                line_str = str(pid) + " " + " ".join(map(str, test_gene_ids))
-                f_test.write(line_str + "\n")
+
+    # 7) Split the genes into k folds
+    #    np.array_split handles edge cases where len(all_genes) is not
+    #    perfectly divisible by k.
+    folds = np.array_split(all_genes, k)
+
+    # 8) For each fold i, create train_i.txt and test_i.txt
+    for i in range(k):
+        test_genes = set(folds[i])
+        # Train is everything not in the i-th fold
+        train_genes = set()
+        for j in range(k):
+            if j != i:
+                train_genes.update(folds[j])
+
+        # Define output paths for fold i
+        train_path = os.path.join(folder_path, f"train_{i}.txt")
+        test_path = os.path.join(folder_path, f"test_{i}.txt")
+
+        with open(train_path, 'w', encoding='utf-8') as f_train, \
+             open(test_path, 'w', encoding='utf-8') as f_test:
+
+            # For each phenotype, write the appropriate line to train or test
+            for pheno_name in all_phenos:
+                pid = pheno2id[pheno_name]
+                genes_for_pheno = pheno2genes[pheno_name]
+
+                # Genes that appear in the training set
+                train_genes_for_pheno = genes_for_pheno.intersection(train_genes)
+                if train_genes_for_pheno:
+                    train_gene_ids = [entity2id[g] for g in sorted(train_genes_for_pheno)]
+                    line_str = str(pid) + " " + " ".join(map(str, train_gene_ids))
+                    f_train.write(line_str + "\n")
+
+                # Genes that appear in the test set
+                test_genes_for_pheno = genes_for_pheno.intersection(test_genes)
+                if test_genes_for_pheno:
+                    test_gene_ids = [entity2id[g] for g in sorted(test_genes_for_pheno)]
+                    line_str = str(pid) + " " + " ".join(map(str, test_gene_ids))
+                    f_test.write(line_str + "\n")
+
+    print(f"Successfully created k-fold train/test files (k={k}) in {folder_path}")
+
 
 
 def main():
-    # multi_data()
-    # files_name = ["entity2id.txt", "relation2id.txt", "triple.txt"]
-    # print(len(entity_set))
-    # print(len(relation_set))
-    # print(len(triple_set))
-    # write2txt(os.path.join(target_path, files_name[0]), entity_set, "set")
-    # write2txt(os.path.join(target_path, files_name[1]), relation_set, "set")
-    # write2txt(os.path.join(target_path, files_name[2]), triple_set, "list")
-    # # Added
-    # build_kg_final(target_path, file_out="kg_final.txt")
-    create_train_test(target_path, test_ratio=0.1, seed=42)
+    multi_data()
+    files_name = ["entity2id.txt", "relation2id.txt", "triple.txt"]
+    print("entity_set: ", len(entity_set))
+    print("relation_set: ", len(relation_set))
+    print("triple_set: ", len(triple_set))
+    write2txt(os.path.join(target_path, files_name[0]), entity_set, "set")
+    write2txt(os.path.join(target_path, files_name[1]), relation_set, "set")
+    write2txt(os.path.join(target_path, files_name[2]), triple_set, "list")
+    # Added
+    build_kg_final(target_path, file_out="kg_final.txt")
+    create_kfold(target_path, k=10, seed=42)
 
 if __name__ == "__main__":
     main()
