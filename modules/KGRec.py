@@ -151,13 +151,13 @@ class KGRec(nn.Module):
             self.cl_coef = 0.001
             self.tau = 0.2
             self.cl_drop = 0.5
-        # Added. Currently follow the setting of alibaba-fashion
-        elif args_config.dataset == 'rice':
-            self.mae_coef = 0.1
-            self.mae_msize = 256
-            self.cl_coef = 0.001
-            self.tau = 0.2
-            self.cl_drop = 0.5
+        # # Added. Currently follow the setting of alibaba-fashion
+        # elif args_config.dataset == 'rice':
+        #     self.mae_coef = 0.1
+        #     self.mae_msize = 256
+        #     self.cl_coef = 0.001
+        #     self.tau = 0.2
+        #     self.cl_drop = 0.5
         
         # update hps
         if hp_dict is not None:

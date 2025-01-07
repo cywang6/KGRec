@@ -40,7 +40,7 @@ def parse_args_kgsr():
     parser.add_argument("--cuda", type=int, default=1, help="use gpu or not")
     parser.add_argument("--gpu_id", type=int, default=0, help="gpu id")
     parser.add_argument('--Ks', nargs='?', default='[20]', help='Output sizes of every layer')
-    parser.add_argument('--test_flag', nargs='?', default='part',
+    parser.add_argument('--test_flag', nargs='?', default='full',
                         help='Specify the test type from {part, full}, indicating whether the reference is done in mini-batch')
 
     # ===== relation context ===== #
