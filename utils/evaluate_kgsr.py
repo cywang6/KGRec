@@ -7,6 +7,8 @@ import multiprocessing
 import heapq
 from time import time
 
+import pickle
+
 cores = multiprocessing.cpu_count() // 2
 
 args = parse_args_kgsr()
@@ -107,6 +109,15 @@ def test_one_user(x):
         r, auc = ranklist_by_heapq(user_pos_test, test_items, rating, Ks)
     else:
         r, auc = ranklist_by_sorted(user_pos_test, test_items, rating, Ks)
+
+    if u==1 or u=='1':
+        # Save user_pos_test, test_items, rating
+        with open('user_pos_test.pkl', 'wb') as f:
+            pickle.dump(user_pos_test, f)
+        with open('test_items.pkl', 'wb') as f:
+            pickle.dump(test_items, f)
+        with open('rating.pkl', 'wb') as f:
+            pickle.dump(rating, f)
 
     result = get_performance(user_pos_test, r, auc, Ks)
     result['top_100_items'] = get_top_100_items(test_items, rating)

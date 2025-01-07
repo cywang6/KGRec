@@ -152,7 +152,7 @@ if __name__ == '__main__':
                     [epoch, train_e_t - train_s_t, test_e_t - test_s_t, list(add_loss_dict.values()), ret['recall'], ret['ndcg'], ret['precision'], ret['hit_ratio'], ret['auc']]
                 )
                 logger.info(train_res)
-                print(ret['top_100_items'])
+                # print(ret['top_100_items'])
                 print(ret['auc_list'])
 
                 # *********************************************************
