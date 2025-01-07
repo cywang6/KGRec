@@ -70,7 +70,7 @@ def get_top_100_items(test_items, rating):
     for i in test_items:
         item_score[i] = rating[i]
     K_max = 100
-    K_max_item_score = heapq.nlargest(K_max, item_score, key=item_score.get)
+    K_max_item_score = heapq.nlargest(K_max, item_score.items(), key=lambda x: x[1])
     return K_max_item_score
 
 def get_performance(user_pos_test, r, auc, Ks):
