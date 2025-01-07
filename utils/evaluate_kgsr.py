@@ -119,7 +119,8 @@ def test(model, user_dict, n_params):
               'ndcg': np.zeros(len(Ks)),
               'hit_ratio': np.zeros(len(Ks)),
               'auc': 0., 
-              'top_100_items': {}
+              'top_100_items': {},
+              'auc_list': []
               }
 
     global n_users, n_items
@@ -187,7 +188,7 @@ def test(model, user_dict, n_params):
             result['hit_ratio'] += re['hit_ratio']/n_test_users
             result['auc'] += re['auc']/n_test_users
             result['top_100_items'][user_id] = re['top_100_items']
-
+            result['auc_list'].append((user_id, re['auc']))
 
     assert count == n_test_users
     pool.close()

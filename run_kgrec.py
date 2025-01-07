@@ -153,6 +153,7 @@ if __name__ == '__main__':
                 )
                 logger.info(train_res)
                 print(ret['top_100_items'])
+                print(ret['auc_list'])
 
                 # *********************************************************
                 # early stopping when cur_best_pre_0 is decreasing for ten successive steps.
