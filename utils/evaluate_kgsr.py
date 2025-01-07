@@ -65,6 +65,14 @@ def ranklist_by_sorted(user_pos_test, test_items, rating, Ks):
     auc = get_auc(item_score, user_pos_test)
     return r, auc
 
+def get_top_100_items(test_items, rating):
+    item_score = {}
+    for i in test_items:
+        item_score[i] = rating[i]
+    K_max = 100
+    K_max_item_score = heapq.nlargest(K_max, item_score, key=item_score.get)
+    return K_max_item_score
+
 def get_performance(user_pos_test, r, auc, Ks):
     precision, recall, ndcg, hit_ratio = [], [], [], []
 
@@ -100,7 +108,9 @@ def test_one_user(x):
     else:
         r, auc = ranklist_by_sorted(user_pos_test, test_items, rating, Ks)
 
-    return get_performance(user_pos_test, r, auc, Ks)
+    result = get_performance(user_pos_test, r, auc, Ks)
+    result['top_100_items'] = get_top_100_items(test_items, rating)
+    return result
 
 
 def test(model, user_dict, n_params):
@@ -108,7 +118,9 @@ def test(model, user_dict, n_params):
               'recall': np.zeros(len(Ks)),
               'ndcg': np.zeros(len(Ks)),
               'hit_ratio': np.zeros(len(Ks)),
-              'auc': 0.}
+              'auc': 0., 
+              'top_100_items': {}
+              }
 
     global n_users, n_items
     n_items = n_params['n_items']
@@ -168,12 +180,14 @@ def test(model, user_dict, n_params):
         batch_result = pool.map(test_one_user, user_batch_rating_uid)
         count += len(batch_result)
 
-        for re in batch_result:
+        for re, user_id in zip(batch_result, user_list_batch):
             result['precision'] += re['precision']/n_test_users
             result['recall'] += re['recall']/n_test_users
             result['ndcg'] += re['ndcg']/n_test_users
             result['hit_ratio'] += re['hit_ratio']/n_test_users
             result['auc'] += re['auc']/n_test_users
+            result['top_100_items'][user_id] = re['top_100_items']
+
 
     assert count == n_test_users
     pool.close()
