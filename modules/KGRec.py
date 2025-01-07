@@ -344,6 +344,7 @@ class KGRec(nn.Module):
         self.logger.info("cl_coef: {}".format(self.cl_coef))
         self.logger.info("mae_coef: {}".format(self.mae_coef))
         self.logger.info("mae_msize: {}".format(self.mae_msize))
+        self.logger.info("learning rate: {}".format(self.lr))
         self.logger.info("########## Model Parameters ##########")
         self.logger.info("context_hops: %d", self.context_hops)
         self.logger.info("node_dropout: %d", self.node_dropout)
