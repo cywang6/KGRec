@@ -129,6 +129,7 @@ class KGRec(nn.Module):
         self.cl_coef = args_config.cl_coef
         self.tau = args_config.cl_tau
         self.cl_drop = args_config.cl_drop_ratio
+        self.lr = args_config.lr
 
         self.samp_func = "torch"
 
