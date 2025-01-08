@@ -138,6 +138,9 @@ def test(model, user_dict, n_params):
     n_items = n_params['n_items']
     n_users = n_params['n_users']
 
+    print('n_users: ', n_users)
+    print('n_items: ', n_items)
+
     global train_user_set, test_user_set
     train_user_set = user_dict['train_user_set']
     test_user_set = user_dict['test_user_set']
