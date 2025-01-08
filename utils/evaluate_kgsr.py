@@ -121,6 +121,15 @@ def test_one_user(x):
 
     result = get_performance(user_pos_test, r, auc, Ks)
     result['top_100_items'] = get_top_100_items(test_items, rating)
+
+    # Add code to test AUC on training set
+    testing_items = test_user_set[u]
+    user_pos_train = train_user_set[u]
+    all_items = set(range(0, n_items))
+    train_items = list(all_items - set(testing_items))
+    _, auc_train = ranklist_by_sorted(user_pos_train, train_items, rating, Ks)
+    result['auc_train'] = auc_train
+
     return result
 
 
@@ -131,7 +140,8 @@ def test(model, user_dict, n_params):
               'hit_ratio': np.zeros(len(Ks)),
               'auc': 0., 
               'top_100_items': {},
-              'auc_list': []
+              'auc_list': [],
+              'auc_train': 0.
               }
 
     global n_users, n_items
@@ -203,7 +213,7 @@ def test(model, user_dict, n_params):
             result['auc'] += re['auc']/n_test_users
             result['top_100_items'][user_id] = re['top_100_items']
             result['auc_list'].append((user_id, re['auc']))
-
+            result['auc_train'] += re['auc_train']/n_test_users
     assert count == n_test_users
     pool.close()
     return result
