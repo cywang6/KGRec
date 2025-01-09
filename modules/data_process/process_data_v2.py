@@ -197,6 +197,10 @@ def create_kfold(
             if relation_name != "phenotype":
                 continue
 
+            # Caution: assuming all genes are start with 'agis_'
+            if not e1_name.startswith('agis_'):
+                continue
+
             # Skip if either entity is not in entity2id
             if e1_name not in entity2id or e2_name not in entity2id:
                 continue
