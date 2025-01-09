@@ -270,13 +270,15 @@ def create_kfold(
 
 def get_gene_set(triple_data):
     """
-    Identifies which entities are genes by looking for (gene, 'phenotype', pheno).
-    Returns a set of gene names (the 'head' part of those triples).
+    Identifies which entities are genes by looking for "agis_"
+    Returns a set of gene names.
     """
     gene_names = set()
     for (head, relation, tail) in triple_data:
-        if relation == "phenotype":
+        if head.startswith('agis_'):
             gene_names.add(head)
+        if tail.startswith('agis_'):
+            gene_names.add(tail)
     return gene_names
 
 
