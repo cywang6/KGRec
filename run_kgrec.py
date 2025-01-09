@@ -78,7 +78,6 @@ if __name__ == '__main__':
         train_cf, test_cf, user_dict, n_params, graph, mat_list = load_data(args)
         adj_mat_list, norm_mat_list, mean_mat_list = mat_list
 
-        global n_users, n_items, n_entities, n_relations, n_nodes
         n_users = n_params['n_users']
         n_items = n_params['n_items']
         n_entities = n_params['n_entities']
