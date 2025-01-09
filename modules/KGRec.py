@@ -130,6 +130,7 @@ class KGRec(nn.Module):
         self.tau = args_config.cl_tau
         self.cl_drop = args_config.cl_drop_ratio
         self.lr = args_config.lr
+        self.rec_coef = args_config.rec_coef
 
         self.samp_func = "torch"
 
@@ -273,6 +274,9 @@ class KGRec(nn.Module):
         item_agg_kg = self.gcn.forward_kg(
             item_emb, cl_kg_edge, cl_kg_type)[:self.n_items]
         cl_loss = self.cl_coef * self.contrast_fn(item_agg_ui, item_agg_kg)
+
+        # Added.
+        loss = self.rec_coef * loss
 
         loss_dict = {
             "rec_loss": loss.item(),
