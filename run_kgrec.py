@@ -1,3 +1,4 @@
+
 import setproctitle
 import random
 from tqdm import tqdm
@@ -91,7 +92,6 @@ if __name__ == '__main__':
         model = model_dict[args.model]
         model = model(n_params, args, graph, mean_mat_list[0]).to(device)
         model.print_shapes()
-
         """define optimizer"""
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
@@ -102,35 +102,10 @@ if __name__ == '__main__':
         cur_stopping_step = 0
         should_stop = False
 
-        # ---------------------------------------------------------------------
-        #                TEST BEFORE ANY TRAINING HAPPENS
-        # ---------------------------------------------------------------------
-        logger.info("Initial testing (before training) ...")
-        model.eval()
-        with torch.no_grad():
-            ret_initial = test(model, user_dict, n_params)
-
-        # Log initial performance
-        initial_res = PrettyTable()
-        initial_res.field_names = [
-            "Stage", "Epoch", "training time", "testing time",
-            "Loss", "recall", "ndcg", "precision", "hit_ratio", "AUROC"
-        ]
-        initial_res.add_row([
-            "Initial", 0,
-            0.0, 0.0,  # No training/testing time yet
-            [],  # No losses yet
-            ret_initial['recall'],
-            ret_initial['ndcg'],
-            ret_initial['precision'],
-            ret_initial['hit_ratio'],
-            ret_initial['auc']
-        ])
-        logger.info(initial_res)
-
         logger.info("start training ...")
         for epoch in range(args.epoch):
             """training CF"""
+            """cf data"""
             train_cf_with_neg = neg_sampling_cpp(train_cf, user_dict['train_user_set'])
             # shuffle training data
             index = np.arange(len(train_cf))
@@ -141,10 +116,10 @@ if __name__ == '__main__':
             model.train()
             add_loss_dict, s = defaultdict(float), 0
             train_s_t = time()
-
             with tqdm(total=len(train_cf)//args.batch_size) as pbar:
                 while s + args.batch_size <= len(train_cf):
-                    batch = get_feed_dict(train_cf_with_neg, s, s + args.batch_size)
+                    batch = get_feed_dict(train_cf_with_neg,
+                                        s, s + args.batch_size)
                     batch_loss, batch_loss_dict = model(batch)
 
                     optimizer.zero_grad(set_to_none=True)
@@ -168,52 +143,36 @@ if __name__ == '__main__':
                 test_e_t = time()
 
                 train_res = PrettyTable()
-                train_res.field_names = [
-                    "Epoch", "training time", "testing time",
-                    "Loss", "recall", "ndcg", "precision",
-                    "hit_ratio", "AUROC"
-                ]
+                # train_res.field_names = ["Epoch", "training time", "tesing time", "Loss", "recall", "ndcg", "precision", "hit_ratio"]
+                # train_res.add_row(
+                #     [epoch, train_e_t - train_s_t, test_e_t - test_s_t, list(add_loss_dict.values()), ret['recall'], ret['ndcg'], ret['precision'], ret['hit_ratio']]
+                # )
+                train_res.field_names = ["Epoch", "training time", "tesing time", "Loss", "recall", "ndcg", "precision", "hit_ratio", "AUROC"]
                 train_res.add_row(
-                    [
-                        epoch,
-                        train_e_t - train_s_t,
-                        test_e_t - test_s_t,
-                        list(add_loss_dict.values()),
-                        ret['recall'],
-                        ret['ndcg'],
-                        ret['precision'],
-                        ret['hit_ratio'],
-                        ret['auc']
-                    ]
+                    [epoch, train_e_t - train_s_t, test_e_t - test_s_t, list(add_loss_dict.values()), ret['recall'], ret['ndcg'], ret['precision'], ret['hit_ratio'], ret['auc']]
                 )
                 logger.info(train_res)
+                # print(ret['top_100_items'])
+                # print(ret['auc_list'])
                 print('auc_train: ', ret['auc_train'])
 
-                # early stopping
-                cur_best_pre_0, cur_stopping_step, should_stop = early_stopping(
-                    ret['recall'][0],
-                    cur_best_pre_0,
-                    cur_stopping_step,
-                    expected_order='acc',
-                    flag_step=early_stop_step
-                )
+                # *********************************************************
+                # early stopping when cur_best_pre_0 is decreasing for ten successive steps.
+                cur_best_pre_0, cur_stopping_step, should_stop = early_stopping(ret['recall'][0], cur_best_pre_0,cur_stopping_step, expected_order='acc', flag_step=early_stop_step)
                 if cur_stopping_step == 0:
                     logger.info("###find better!")
                 elif should_stop:
                     break
 
-                # save model
+                """save weight"""
                 if ret['recall'][0] == cur_best_pre_0 and args.save:
                     save_path = args.out_dir + log_fn + '.ckpt'
                     logger.info('save better model at epoch %d to path %s' % (epoch, save_path))
                     torch.save(model.state_dict(), save_path)
+
             else:
-                logger.info('{}: using time {:.2f}s, training loss at epoch {}: {}'.format(
-                    datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    train_e_t - train_s_t,
-                    epoch,
-                    list(add_loss_dict.values())
-                ))
+                # logging.info('training loss at epoch %d: %f' % (epoch, loss.item()))
+                logger.info('{}: using time {}, training loss at epoch {}: {}'.format(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), train_e_t - train_s_t, epoch, list(add_loss_dict.values())))
 
         logger.info('early stopping at %d, recall@20:%.4f' % (epoch, cur_best_pre_0))
 
