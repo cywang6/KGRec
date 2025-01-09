@@ -1,4 +1,4 @@
-
+import wandb
 import setproctitle
 import random
 from tqdm import tqdm
@@ -74,6 +74,14 @@ if __name__ == '__main__':
         
         logger.info('PID: %d', os.getpid())
         logger.info(f"DESC: {args.desc}\n")
+
+        """Initialize Weights & Biases"""
+        wandb.init(
+            project="KGRec",  # change to your W&B project name
+            name=f"{args.dataset}-{args.train_file}-{args.test_file}"
+        )
+        # Track hyperparameters in W&B
+        wandb.config.update(args.__dict__)
 
         """build dataset"""
         train_cf, test_cf, user_dict, n_params, graph, mat_list = load_data(args)
@@ -156,9 +164,20 @@ if __name__ == '__main__':
                 # print(ret['auc_list'])
                 print('auc_train: ', ret['auc_train'])
 
+                wandb.log({
+                    "epoch": epoch,
+                    "rec_loss": add_loss_dict['rec_loss'],
+                    "mae_loss": add_loss_dict['mae_loss'],
+                    "cl_loss": add_loss_dict['cl_loss'],
+                    "auc_train": ret['auc_train'],
+                    "auc_test": ret['auc']
+                })
+
                 # *********************************************************
                 # early stopping when cur_best_pre_0 is decreasing for ten successive steps.
-                cur_best_pre_0, cur_stopping_step, should_stop = early_stopping(ret['recall'][0], cur_best_pre_0,cur_stopping_step, expected_order='acc', flag_step=early_stop_step)
+                # cur_best_pre_0, cur_stopping_step, should_stop = early_stopping(ret['recall'][0], cur_best_pre_0,cur_stopping_step, expected_order='acc', flag_step=early_stop_step)
+                # We change to use AUC as the metric for early stopping.
+                cur_best_pre_0, cur_stopping_step, should_stop = early_stopping(ret['auc'], cur_best_pre_0,cur_stopping_step, expected_order='acc', flag_step=early_stop_step)
                 if cur_stopping_step == 0:
                     logger.info("###find better!")
                 elif should_stop:
