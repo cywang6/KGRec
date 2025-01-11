@@ -77,8 +77,8 @@ if __name__ == '__main__':
 
         """Initialize Weights & Biases"""
         wandb.init(
-            project="KGRec",  # change to your W&B project name
-            name=f"{args.dataset}-{args.train_file}-rec{args.rec_coef}-cl{args.cl_coef}-mae{args.mae_coef}"
+            project=f"KGRec-{args.dataset}",  # change to your W&B project name
+            name=f"{args.train_file}-rec{args.rec_coef}-cl{args.cl_coef}-mae{args.mae_coef}"
         )
         # Track hyperparameters in W&B
         wandb.config.update(args.__dict__)
