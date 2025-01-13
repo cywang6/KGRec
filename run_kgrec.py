@@ -76,10 +76,16 @@ if __name__ == '__main__':
         logger.info(f"DESC: {args.desc}\n")
 
         """Initialize Weights & Biases"""
-        wandb.init(
-            project=f"KGRec-{args.dataset}-nodeDropout0.1",  # change to your W&B project name
-            name=f"{args.train_file}-rec{args.rec_coef}-cl{args.cl_coef}-mae{args.mae_coef}"
-        )
+        if args.node_dropout_rate - 0.1 < 1e-6:
+            wandb.init(
+                project=f"KGRec-{args.dataset}-nodeDropout0.1",  # change to your W&B project name
+                name=f"{args.train_file}-rec{args.rec_coef}-cl{args.cl_coef}-mae{args.mae_coef}"
+            )
+        elif args.node_dropout_rate - 0.2 < 1e-6:
+            wandb.init(
+                project=f"KGRec-{args.dataset}-nodeDropout0.2",  # change to your W&B project name
+                name=f"{args.train_file}-rec{args.rec_coef}-cl{args.cl_coef}-mae{args.mae_coef}"
+            )
         # Track hyperparameters in W&B
         wandb.config.update(args.__dict__)
 

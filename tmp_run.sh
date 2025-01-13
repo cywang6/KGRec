@@ -1,6 +1,3 @@
-python run_kgrec.py --dataset rice2 --train_file train_0.txt --test_file test_0.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.1
-python run_kgrec.py --dataset rice2 --train_file train_1.txt --test_file test_1.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.1
-python run_kgrec.py --dataset rice2 --train_file train_2.txt --test_file test_2.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.1
 python run_kgrec.py --dataset rice2 --train_file train_3.txt --test_file test_3.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.1
 python run_kgrec.py --dataset rice2 --train_file train_4.txt --test_file test_4.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.1
 python run_kgrec.py --dataset rice2 --train_file train_5.txt --test_file test_5.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.1
@@ -8,3 +5,14 @@ python run_kgrec.py --dataset rice2 --train_file train_6.txt --test_file test_6.
 python run_kgrec.py --dataset rice2 --train_file train_7.txt --test_file test_7.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.1
 python run_kgrec.py --dataset rice2 --train_file train_8.txt --test_file test_8.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.1
 python run_kgrec.py --dataset rice2 --train_file train_9.txt --test_file test_9.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.1
+
+python run_kgrec.py --dataset rice2 --train_file train_0.txt --test_file test_0.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.2
+python run_kgrec.py --dataset rice2 --train_file train_1.txt --test_file test_1.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.2
+python run_kgrec.py --dataset rice2 --train_file train_2.txt --test_file test_2.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.2
+python run_kgrec.py --dataset rice2 --train_file train_3.txt --test_file test_3.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.2
+python run_kgrec.py --dataset rice2 --train_file train_4.txt --test_file test_4.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.2
+python run_kgrec.py --dataset rice2 --train_file train_5.txt --test_file test_5.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.2
+python run_kgrec.py --dataset rice2 --train_file train_6.txt --test_file test_6.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.2
+python run_kgrec.py --dataset rice2 --train_file train_7.txt --test_file test_7.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.2
+python run_kgrec.py --dataset rice2 --train_file train_8.txt --test_file test_8.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.2
+python run_kgrec.py --dataset rice2 --train_file train_9.txt --test_file test_9.txt --rec_coef 1 --mae_coef 1 --cl_coef 1 --node_dropout_rate 0.2
