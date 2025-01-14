@@ -39,7 +39,7 @@ with open(args.data_path + args.dataset + '/entity2id.txt', 'r') as f:
 
 with open(args.data_path + args.dataset + '/pheno2id.txt', 'r') as f:
     for line in f:
-        pheno, idx = line.strip().split('\t')
+        pheno, idx = line.strip().split(' ')
         id2pheno[int(idx)] = pheno
 
 special_item_indices = [entity2id[item] for item in special_items]
