@@ -30,7 +30,7 @@ special_items = [
     'agis_os08g039100'
 ]
 # load entity2id
-entity2id = {}, id2entity = {}
+entity2id, id2entity = {}, {}
 with open(args.data_path + args.dataset + '/entity2id.txt', 'r') as f:
     for line in f:
         entity, idx = line.strip().split('\t')
