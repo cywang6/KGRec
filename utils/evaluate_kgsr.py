@@ -30,12 +30,17 @@ special_items = [
     'agis_os08g039100'
 ]
 # load entity2id
-entity2id, id2entity = {}, {}
+entity2id, id2entity, id2pheno = {}, {}, {}
 with open(args.data_path + args.dataset + '/entity2id.txt', 'r') as f:
     for line in f:
         entity, idx = line.strip().split('\t')
         entity2id[entity] = int(idx)
         id2entity[int(idx)] = entity
+
+with open(args.data_path + args.dataset + '/pheno2id.txt', 'r') as f:
+    for line in f:
+        pheno, idx = line.strip().split('\t')
+        id2pheno[int(idx)] = pheno
 
 special_item_indices = [entity2id[item] for item in special_items]
 
@@ -241,9 +246,9 @@ def test(model, user_dict, n_params):
             result['auc_train'] += re['auc_train']/n_test_users
 
             # Store the special item scores in the result
-            result['special_item_scores'][id2entity[user_id]] = re['special_item_scores']
-            if user_id == entity2id['photoperiod_sensing'] or user_id == entity2id['photosynthetic_efficiency']:
-                result['top_K_items'][id2entity[user_id]] = re['top_K_items']
+            result['special_item_scores'][id2pheno[user_id]] = re['special_item_scores']
+            if id2pheno[user_id] == 'photoperiod_sensing' or id2pheno[user_id] == 'photosynthetic_efficiency':
+                result['top_K_items'][id2pheno[user_id]] = re['top_K_items']
 
     assert count == n_test_users
     pool.close()
