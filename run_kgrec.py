@@ -164,10 +164,11 @@ if __name__ == '__main__':
                 print('auc_train: ', ret['auc_train'])
 
                 # Save the ret['special_item_scores'] and ret['top_K_items']
-                with open(args.data_path + args.dataset + '/special_item_scores_epoch_{}.pkl'.format(epoch), 'wb') as f:
-                    pickle.dump(ret['special_item_scores'], f)
-                with open(args.data_path + args.dataset + '/top_K_items_epoch_{}.pkl'.format(epoch), 'wb') as f:
-                    pickle.dump(ret['top_K_items'], f)
+                if epoch == 9:
+                    with open(args.data_path + args.dataset + '/special_item_scores_epoch_{}.pkl'.format(epoch), 'wb') as f:
+                        pickle.dump(ret['special_item_scores'], f)
+                    with open(args.data_path + args.dataset + '/top_K_items_epoch_{}.pkl'.format(epoch), 'wb') as f:
+                        pickle.dump(ret['top_K_items'], f)
 
                 wandb.log({
                     "epoch": epoch,
