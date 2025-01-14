@@ -151,7 +151,7 @@ def test_one_user(x):
     result['special_item_scores'] = user_item_scores
     # Save top K items for each user (phenotype)
     K_max = 1000
-    result['top_100_items'] = get_top_K_items(test_items, rating, K_max)
+    result['top_100_items'] = get_top_K_items(all_items, rating, K_max)
     ########################################
 
     return result
