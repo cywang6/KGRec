@@ -143,7 +143,6 @@ def build_kg_final(
                         f"{entity2id[head]} {relation2id[relation]} {entity2id[tail]}\n"
                     )
 
-
 def create_kfold(
     folder_path,
     entity2id_file="entity2id.txt",
@@ -156,7 +155,10 @@ def create_kfold(
     Create k-fold cross validation splits for pheno-gene mapping.
     For each fold i, produce train_i.txt and test_i.txt.
 
-    train_i.txt and test_i.txt have the format:
+    Additionally, produce a train.txt that has *all* pheno-gene pairs,
+    regardless of the fold.
+
+    train_i.txt, test_i.txt, and train.txt have the format:
         pheno_id gene1_id gene2_id ...
 
     A single pheno2id.txt is also created with IDs for phenotypes.
@@ -190,7 +192,7 @@ def create_kfold(
             if relation_name != "phenotype":
                 continue
 
-            # Caution: assuming all genes are start with 'agis_'
+            # Caution: assuming all genes start with 'agis_'
             if not e1_name.startswith('agis_'):
                 continue
 
@@ -248,22 +250,33 @@ def create_kfold(
                 pid = pheno2id[pheno_name]
                 genes_for_pheno = pheno2genes[pheno_name]
 
-                # Genes that appear in the training set
+                # Genes in the training fold
                 train_genes_for_pheno = genes_for_pheno.intersection(train_genes)
                 if train_genes_for_pheno:
                     train_gene_ids = [entity2id[g] for g in sorted(train_genes_for_pheno)]
                     line_str = str(pid) + " " + " ".join(map(str, train_gene_ids))
                     f_train.write(line_str + "\n")
 
-                # Genes that appear in the test set
+                # Genes in the test fold
                 test_genes_for_pheno = genes_for_pheno.intersection(test_genes)
                 if test_genes_for_pheno:
                     test_gene_ids = [entity2id[g] for g in sorted(test_genes_for_pheno)]
                     line_str = str(pid) + " " + " ".join(map(str, test_gene_ids))
                     f_test.write(line_str + "\n")
 
-    print(f"Successfully created k-fold train/test files (k={k}) in {folder_path}")
+    # 9) Create a train.txt that includes *all* pheno-gene pairs
+    train_all_path = os.path.join(folder_path, "train.txt")
+    with open(train_all_path, "w", encoding="utf-8") as f_train_all:
+        for pheno_name in all_phenos:
+            pid = pheno2id[pheno_name]
+            genes_for_pheno = pheno2genes[pheno_name]
 
+            if genes_for_pheno:
+                all_gene_ids = [entity2id[g] for g in sorted(genes_for_pheno)]
+                line_str = str(pid) + " " + " ".join(map(str, all_gene_ids))
+                f_train_all.write(line_str + "\n")
+
+    print(f"Successfully created k-fold train/test files (k={k}) and train.txt in {folder_path}")
 
 def get_gene_set(triple_data):
     """

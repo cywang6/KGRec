@@ -17,6 +17,28 @@ device = torch.device("cuda:" + str(args.gpu_id)) if args.cuda else torch.device
 BATCH_SIZE = args.test_batch_size
 batch_test_flag = args.batch_test_flag
 
+############################
+# Define our specific items
+############################
+special_items = [
+    'agis_os05g045150', 'agis_os11g015540', 'agis_os11g038210',
+    'agis_os08g034710', 'agis_os03g056190', 'agis_os03g024270',
+    'agis_os08g038440', 'agis_os06g014910', 'agis_os12g016170',
+    'agis_os12g039280', 'agis_os01g002460', 'agis_os07g002940',
+    'agis_os04g042480', 'agis_os09g033350', 'agis_os03g015160',
+    'agis_os01g048330', 'agis_os04g032850', 'agis_os05g034560',
+    'agis_os08g039100'
+]
+# load entity2id
+entity2id = {}, id2entity = {}
+with open(args.data_path + args.dataset + '/entity2id.txt', 'r') as f:
+    for line in f:
+        entity, idx = line.strip().split('\t')
+        entity2id[entity] = int(idx)
+        id2entity[int(idx)] = entity
+
+special_item_indices = [entity2id[item] for item in special_items]
+
 
 def ranklist_by_heapq(user_pos_test, test_items, rating, Ks):
     item_score = {}
@@ -67,12 +89,12 @@ def ranklist_by_sorted(user_pos_test, test_items, rating, Ks):
     auc = get_auc(item_score, user_pos_test)
     return r, auc
 
-def get_top_100_items(test_items, rating):
+# Self added to get top K items (genes) for each user (phenotype)
+def get_top_K_items(test_items, rating, K):
     item_score = {}
     for i in test_items:
-        item_score[i] = rating[i]
-    K_max = 100
-    K_max_item_score = heapq.nlargest(K_max, item_score.items(), key=lambda x: x[1])
+        item_score[id2entity[i]] = rating[i]
+    K_max_item_score = heapq.nlargest(K, item_score.items(), key=lambda x: x[1])
     return K_max_item_score
 
 def get_performance(user_pos_test, r, auc, Ks):
@@ -102,7 +124,6 @@ def test_one_user(x):
     user_pos_test = test_user_set[u]
 
     all_items = set(range(0, n_items))
-
     test_items = list(all_items - set(training_items))
 
     if args.test_flag == 'part':
@@ -110,25 +131,28 @@ def test_one_user(x):
     else:
         r, auc = ranklist_by_sorted(user_pos_test, test_items, rating, Ks)
 
-    # if u==1 or u=='1':
-    #     # Save user_pos_test, test_items, rating
-    #     with open('user_pos_test.pkl', 'wb') as f:
-    #         pickle.dump(user_pos_test, f)
-    #     with open('test_items.pkl', 'wb') as f:
-    #         pickle.dump(test_items, f)
-    #     with open('rating.pkl', 'wb') as f:
-    #         pickle.dump(rating, f)
-
     result = get_performance(user_pos_test, r, auc, Ks)
-    result['top_100_items'] = get_top_100_items(test_items, rating)
 
-    # Add code to test AUC on training set
+    # AUC on training set
     testing_items = test_user_set[u]
     user_pos_train = train_user_set[u]
     all_items = set(range(0, n_items))
     train_items = list(all_items - set(testing_items))
     _, auc_train = ranklist_by_sorted(user_pos_train, train_items, rating, Ks)
     result['auc_train'] = auc_train
+
+    ########################################
+    # Collect scores for the special items
+    ########################################
+    user_item_scores = {}
+    for idx in special_item_indices:
+        user_item_scores[id2entity[idx]] = float(rating[idx].item() if hasattr(rating[idx], 'item') 
+                                        else rating[idx])
+    result['special_item_scores'] = user_item_scores
+    # Save top K items for each user (phenotype)
+    K_max = 1000
+    result['top_100_items'] = get_top_K_items(test_items, rating, K_max)
+    ########################################
 
     return result
 
@@ -138,11 +162,12 @@ def test(model, user_dict, n_params):
               'recall': np.zeros(len(Ks)),
               'ndcg': np.zeros(len(Ks)),
               'hit_ratio': np.zeros(len(Ks)),
-              'auc': 0., 
-              'top_100_items': {},
+              'auc': 0.,
               'auc_list': [],
-              'auc_train': 0.
-              }
+              'auc_train': 0.,
+              'special_item_scores': {},
+              'top_K_items': {}
+            }
 
     global n_users, n_items
     n_items = n_params['n_items']
@@ -205,15 +230,21 @@ def test(model, user_dict, n_params):
         batch_result = pool.map(test_one_user, user_batch_rating_uid)
         count += len(batch_result)
 
+
         for re, user_id in zip(batch_result, user_list_batch):
             result['precision'] += re['precision']/n_test_users
             result['recall'] += re['recall']/n_test_users
             result['ndcg'] += re['ndcg']/n_test_users
             result['hit_ratio'] += re['hit_ratio']/n_test_users
             result['auc'] += re['auc']/n_test_users
-            result['top_100_items'][user_id] = re['top_100_items']
             result['auc_list'].append((user_id, re['auc']))
             result['auc_train'] += re['auc_train']/n_test_users
+
+            # Store the special item scores in the result
+            result['special_item_scores'][id2entity[user_id]] = re['special_item_scores']
+            if user_id == entity2id['photoperiod_sensing'] or user_id == entity2id['photosynthetic_efficiency']:
+                result['top_K_items'][id2entity[user_id]] = re['top_K_items']
+
     assert count == n_test_users
     pool.close()
     return result

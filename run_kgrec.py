@@ -16,6 +16,7 @@ from utils.helper import early_stopping, init_logger
 from logging import getLogger
 from utils.sampler import UniformSampler
 from collections import defaultdict
+import pickle
 
 seed = 2020
 n_users = 0
@@ -76,16 +77,10 @@ if __name__ == '__main__':
         logger.info(f"DESC: {args.desc}\n")
 
         """Initialize Weights & Biases"""
-        if args.node_dropout_rate - 0.1 < 1e-6:
-            wandb.init(
-                project=f"KGRec-{args.dataset}-nodeDropout0.1",  # change to your W&B project name
-                name=f"{args.train_file}-rec{args.rec_coef}-cl{args.cl_coef}-mae{args.mae_coef}"
-            )
-        elif args.node_dropout_rate - 0.2 < 1e-6:
-            wandb.init(
-                project=f"KGRec-{args.dataset}-nodeDropout0.2",  # change to your W&B project name
-                name=f"{args.train_file}-rec{args.rec_coef}-cl{args.cl_coef}-mae{args.mae_coef}"
-            )
+        wandb.init(
+            project=f"KGRec-{args.dataset}-All",  # change to your W&B project name
+            name=f"{args.train_file}-rec{args.rec_coef}-cl{args.cl_coef}-mae{args.mae_coef}-nodeDropout{args.node_dropout_rate}"
+        )
         # Track hyperparameters in W&B
         wandb.config.update(args.__dict__)
 
@@ -166,9 +161,13 @@ if __name__ == '__main__':
                     [epoch, train_e_t - train_s_t, test_e_t - test_s_t, list(add_loss_dict.values()), ret['recall'], ret['ndcg'], ret['precision'], ret['hit_ratio'], ret['auc']]
                 )
                 logger.info(train_res)
-                # print(ret['top_100_items'])
-                # print(ret['auc_list'])
                 print('auc_train: ', ret['auc_train'])
+
+                # Save the ret['special_item_scores'] and ret['top_K_items']
+                with open(args.data_path + args.dataset + '/special_item_scores_epoch_{}.pkl'.format(epoch), 'wb') as f:
+                    pickle.dump(ret['special_item_scores'], f)
+                with open(args.data_path + args.dataset + '/top_K_items_epoch_{}.pkl'.format(epoch), 'wb') as f:
+                    pickle.dump(ret['top_K_items'], f)
 
                 wandb.log({
                     "epoch": epoch,

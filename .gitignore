@@ -237,3 +237,6 @@ logs/
 # data/rice/ folder
 data/rice/
 data/rice2/
+
+# ignore the files end with .sh
+*.sh
