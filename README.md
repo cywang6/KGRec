@@ -101,6 +101,36 @@ modules/data_process/print_candidate_genes.ipynb
 
 ---
 
+## Data Processing Details
+
+### Triple File
+The `triple.txt` file is processed following the TransE and TransR algorithm conventions.
+
+### Entity2ID
+The `entity2id.txt` file is constructed to prioritize gene nodes, meeting the requirements of the KGRec algorithm. It includes all node types except phenotype nodes from `triple.txt`.
+
+### Knowledge Graph
+The final knowledge graph (`kg_final.txt`) includes all nodes and edges, excluding phenotype nodes and their edges. Each line represents an edge in the format:
+
+```
+entity_id relation_id entity_id
+```
+
+### Pheno-Gene Network
+Files named `train` or `test` follow the format:
+
+```
+pheno_id gene1_id gene2_id ...
+```
+
+This format indicates that a phenotype node is connected to the listed gene nodes.
+
+### Additional Files
+- `relation2id.txt`: Maps relations to IDs.
+- `pheno2id`: Maps phenotype nodes to IDs.
+
+---
+
 ## References
 
 - Original Repository: [HKUDS/KGRec](https://github.com/HKUDS/KGRec)
