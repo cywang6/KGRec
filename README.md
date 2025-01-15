@@ -1,39 +1,108 @@
-## Introduction
-This is the Pytorch implementation for our paper at KDD'23: **Knowledge Graph Self-Supervised Rationalization for Recommendation**.
+# KGRec for Rice Graph Link Prediction
 
-## Environment Dependencies
-You can refer to `requirements.txt` for the experimental environment we set to use.
+This repository adapts the code from [HKUDS/KGRec](https://github.com/HKUDS/KGRec) to perform link prediction tasks on rice graph datasets. For a detailed explanation of the underlying algorithms, please refer to the KDD'23 paper: **Knowledge Graph Self-Supervised Rationalization for Recommendation**.
 
-## run KGRec
-Simply use:
+---
 
-`python run_kgrec.py --dataset [dataset_name]`
+## Environment Setup
 
-And the hyperparameters we use are fixed according to the dataset in `KGRec.py`.
+### Prerequisites
 
-## Baseline Models (KGCL, KGIN)
-We also implement KGCL and include the original KGIN release in our repository. For example, to run KGCL, you may execute:
+Ensure you have access to a PC or cluster with GPU support. To set up the environment, use the following command:
 
-**alibaba-ifashion**
-
-`python run_kgcl.py --mu 0.7 --tau 0.2 --cl_weight 0.1`
-
-**last-fm**
-
-`python run_kgcl.py --mu 0.5 --tau 0.1 --cl_weight 0.1`
-
-**mind**
-
-`python run_kgcl.py --mu 0.6 --tau 0.2 --cl_weight 0.1`
-
-## Citation
-Please kindly cite our work if you find our paper or codes helpful.
+```bash
+conda env create -f environment.yml
 ```
-@inproceedings{yang2023knowledge,
-  title={Knowledge graph self-supervised rationalization for recommendation},
-  author={Yang, Yuhao and Huang, Chao and Xia, Lianghao and Huang, Chunzhen},
-  booktitle={Proceedings of the 29th ACM SIGKDD conference on knowledge discovery and data mining},
-  pages={3046--3056},
-  year={2023}
-}
+
+### CUDA Compatibility
+
+Since some packages depend on the CUDA version directly, verify that their versions are compatible with your installed PyTorch version. For our setup, we used CUDA version 12.4, as indicated by running:
+
+```bash
+nvidia-smi
 ```
+
+---
+
+## Data Preparation
+
+### Folder Structure
+
+1. Create a folder named `rice` (or another name of your choice) inside the `data` directory.
+2. Download and unzip the original dataset (e.g., `for_predicted_traits_Jan04_2025`) into the `rice` folder.
+
+### Data Processing
+
+To prepare the data for the model:
+
+1. Activate the environment:
+
+   ```bash
+   conda activate KGRec
+   ```
+
+2. Navigate to the data processing module:
+
+   ```bash
+   cd modules/data_process/
+   ```
+
+3. Run the data processing script:
+
+   ```bash
+   python process_data_v3.py
+   ```
+
+This process constructs:
+
+- A background knowledge graph.
+- A user-item graph, split into 10 folds, with filenames like `train_i.txt` and `test_i.txt` for each fold.
+- A complete user-item graph saved as `train.txt`.
+
+---
+
+## Running the Model
+
+Use the following command to train and evaluate the model:
+
+```bash
+python run_kgrec.py \
+    --dataset rice \
+    --train_file train_0.txt \
+    --test_file test_0.txt \
+    --rec_coef 1 \
+    --mae_coef 1 \
+    --cl_coef 1 \
+    --node_dropout_rate 0.1
+```
+
+### Notes:
+
+- **Loss Coefficients**: We increase the coefficients for the knowledge graph loss (`rec_coef`) and the contrastive loss (`cl_coef`) to enhance phenotype prediction accuracy for white-list genes. Reducing these coefficients can limit the knowledge graph's contribution to the predictions.
+
+---
+
+## Evaluation
+
+### Output
+
+The results of the run will be displayed:
+
+- In the terminal output.
+- On [Weights & Biases (WandB)](https://wandb.ai) for experiment tracking.
+
+### Additional Analysis
+
+To generate gene-phenotype scores for white-list genes or identify candidate genes for specific phenotypes, refer to the Jupyter notebook:
+
+```bash
+modules/data_process/print_candidate_genes.ipynb
+```
+
+---
+
+## References
+
+- Original Repository: [HKUDS/KGRec](https://github.com/HKUDS/KGRec)
+- Paper: [KDD'23 - Knowledge Graph Self-Supervised Rationalization for Recommendation](https://arxiv.org/abs/...)
+
