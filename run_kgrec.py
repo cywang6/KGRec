@@ -162,6 +162,7 @@ if __name__ == '__main__':
                 )
                 logger.info(train_res)
                 print('auc_train: ', ret['auc_train'])
+                print('auc_train_photo: ', ret['auc_train_photo'])
 
                 # Save the ret['special_item_scores'] and ret['top_K_items']
                 if epoch == 9:
