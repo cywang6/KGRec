@@ -95,10 +95,12 @@ def ranklist_by_sorted(user_pos_test, test_items, rating, Ks):
     return r, auc
 
 # Self added to get top K items (genes) for each user (phenotype)
-def get_top_K_items(test_items, rating, K):
+def get_top_K_items(test_items, rating, K=None):
     item_score = {}
     for i in test_items:
         item_score[id2entity[i]] = rating[i]
+    if K is None:
+        K = len(item_score)
     K_max_item_score = heapq.nlargest(K, item_score.items(), key=lambda x: x[1])
     return K_max_item_score
 
@@ -155,7 +157,7 @@ def test_one_user(x):
                                         else rating[idx])
     result['special_item_scores'] = user_item_scores
     # Save top K items for each user (phenotype)
-    K_max = 1000
+    K_max = None
     result['top_K_items'] = get_top_K_items(all_items, rating, K_max)
     ########################################
 
@@ -171,7 +173,8 @@ def test(model, user_dict, n_params):
               'auc_list': [],
               'auc_train': 0.,
               'special_item_scores': {},
-              'top_K_items': {}
+              'top_K_items': {}, 
+              'auc_train_photo': {}
             }
 
     global n_users, n_items
@@ -249,6 +252,7 @@ def test(model, user_dict, n_params):
             result['special_item_scores'][id2pheno[user_id]] = re['special_item_scores']
             if id2pheno[user_id] == 'photoperiod_sensing' or id2pheno[user_id] == 'photosynthetic_efficiency':
                 result['top_K_items'][id2pheno[user_id]] = re['top_K_items']
+                result['auc_train_photo'][id2pheno[user_id]] = re['auc_train']
 
     assert count == n_test_users
     pool.close()
