@@ -34,7 +34,7 @@ with open(args.data_path + args.dataset + '/for_predicted_traits_Jan04_2025/whit
     f.readline()
     for line in f:
         gene, pheno, score = line.strip().split(',')
-        special_items.add(gene)
+        special_items.add(gene.lower())
 special_items = list(special_items)
         
 # load entity2id
