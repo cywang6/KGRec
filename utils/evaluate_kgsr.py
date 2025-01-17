@@ -29,11 +29,22 @@ batch_test_flag = args.batch_test_flag
 #     'agis_os01g048330', 'agis_os04g032850', 'agis_os05g034560',
 #     'agis_os08g039100'
 # ]
+
+# # To process white_list1_Jan08.csv
+# special_items = set()
+# with open(args.data_path + args.dataset + '/for_predicted_traits_Jan04_2025/white_list1_Jan08.csv', 'r') as f:
+#     f.readline()
+#     for line in f:
+#         gene, pheno, score = line.strip().split(',')
+#         special_items.add(gene.lower())
+# special_items = list(special_items)
+
+# To process white_list2_Jan08.csv
 special_items = set()
-with open(args.data_path + args.dataset + '/for_predicted_traits_Jan04_2025/white_list1_Jan08.csv', 'r') as f:
+with open(args.data_path + args.dataset + '/for_predicted_traits_Jan04_2025/white_list2_Jan08.csv', 'r') as f:
     f.readline()
     for line in f:
-        gene, pheno, score = line.strip().split(',')
+        gene = line.strip()
         special_items.add(gene.lower())
 special_items = list(special_items)
         
