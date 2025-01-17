@@ -20,15 +20,23 @@ batch_test_flag = args.batch_test_flag
 ############################
 # Define our specific items
 ############################
-special_items = [
-    'agis_os05g045150', 'agis_os11g015540', 'agis_os11g038210',
-    'agis_os08g034710', 'agis_os03g056190', 'agis_os03g024270',
-    'agis_os08g038440', 'agis_os06g014910', 'agis_os12g016170',
-    'agis_os12g039280', 'agis_os01g002460', 'agis_os07g002940',
-    'agis_os04g042480', 'agis_os09g033350', 'agis_os03g015160',
-    'agis_os01g048330', 'agis_os04g032850', 'agis_os05g034560',
-    'agis_os08g039100'
-]
+# special_items = [
+#     'agis_os05g045150', 'agis_os11g015540', 'agis_os11g038210',
+#     'agis_os08g034710', 'agis_os03g056190', 'agis_os03g024270',
+#     'agis_os08g038440', 'agis_os06g014910', 'agis_os12g016170',
+#     'agis_os12g039280', 'agis_os01g002460', 'agis_os07g002940',
+#     'agis_os04g042480', 'agis_os09g033350', 'agis_os03g015160',
+#     'agis_os01g048330', 'agis_os04g032850', 'agis_os05g034560',
+#     'agis_os08g039100'
+# ]
+special_items = set()
+with open(args.data_path + args.dataset + '/for_predicted_traits_Jan04_2025/white_list1_Jan08.csv', 'r') as f:
+    f.readline()
+    for line in f:
+        gene, pheno, score = line.strip().split(',')
+        special_items.add(gene)
+special_items = list(special_items)
+        
 # load entity2id
 entity2id, id2entity, id2pheno = {}, {}, {}
 with open(args.data_path + args.dataset + '/entity2id.txt', 'r') as f:
