@@ -197,6 +197,8 @@ def test(model, user_dict, n_params):
     n_test_users = len(test_users)
     n_user_batchs = n_test_users // u_batch_size + 1
 
+    print('n_test_users: ', n_test_users)
+
     count = 0
 
     entity_gcn_emb, user_gcn_emb = model.generate()
